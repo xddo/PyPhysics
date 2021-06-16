@@ -18,13 +18,17 @@ class Particle:
         bounce()
         - Behavior for particle/boundary interaction
     '''
-    def __init__(self, position, size):
+
+    def __init__(self, position, size, mass = 1):
         self.x, self.y = position
         self.size = size
         self.speed = 0
         self.angle = 0
         self.color = GREEN
         self.thickness = 1
+        self.mass = mass
+        # Drag = particle mass / total mass to the power of size X
+        self.drag = (self.mass/(self.mass + mass_air)) ** self.size
     
     def display(self):
         pygame.draw.circle(screen, self.color, (self.x, self.y), self.size, self.thickness)
@@ -37,7 +41,7 @@ class Particle:
         (self.angle, self.speed) = add_vectors((self.angle, self.speed), gravity)
         self.x += math.sin(self.angle) * self.speed
         self.y -= math.cos(self.angle) * self.speed
-        self.speed *= drag
+        self.speed *= self.drag
 
     # Boundaries @ x = 0, y = 0, x = width, y = height
     # First, calculate distance particle has exceeded boundary
@@ -108,28 +112,25 @@ def collide(p1, p2):
     dy = p1.y - p2.y
 
     distance = math.hypot(dx, dy)
+
+    # Reference: https://en.wikipedia.org/wiki/Elastic_collision#One-dimensional_Newtonian
+    # Take particle vector, add second vector whose angle is perpendicular to angle of collision,
+    # As well as whose magnitude is based on momentum (mass * velocity) of second particle
     if distance < p1.size + p2.size:
-        # Angle of point is tangent of particle at point
-        tangent = math.atan2(dy, dx)
-        angle = 0.5 * math.pi + tangent
+        angle = math.atan2(dy, dx) + 0.5 * math.pi
+        total_mass = p1.mass + p2.mass
 
-        # Subtract current angle from 2 * tangent to reflect particle angle on surface
-        angle1 = 2 * tangent - p1.angle
-        angle2 = 2 * tangent - p2.angle
+        (p1.angle, p1.speed) = add_vectors((p1.angle, p1.speed * (p1.mass-p2.mass)/total_mass), (angle, 2 * p2.speed * p2.mass/total_mass))
+        (p2.angle, p2.speed) = add_vectors((p2.angle, p2.speed * (p2.mass-p1.mass)/total_mass), (angle + math.pi, 2 * p1.speed * p1.mass / total_mass))
 
-        # Reduce energy as result of collision
-        speed1 = p2.speed * elasticity
-        speed2 = p1.speed * elasticity
+        p1.speed *= elasticity
+        p2.speed *= elasticity
 
-        # Exchange speeds - energy transfer
-        (p1.angle, p1.speed) = (angle1, speed1)
-        (p2.angle, p2.speed) = (angle2, speed2)
-
-        # This avoids particle collision looping internally until speed = 0
-        p1.x += math.sin(angle)
-        p1.y -= math.cos(angle)
-        p2.x -= math.sin(angle)
-        p2.y += math.cos(angle)
+        overlap = 0.5 * (p1.size + p2.size - distance + 1)
+        p1.x += math.sin(angle) * overlap
+        p1.y -= math.cos(angle) * overlap
+        p2.x -= math.sin(angle) * overlap
+        p2.y += math.cos(angle) * overlap
 
 pygame.init()
 width = 640
@@ -140,27 +141,27 @@ pygame.display.set_caption('PyPhysics')
 # Gravity vector
 # Angle = 180 degrees (downward)
 gravity = (math.pi, 0.002)
-
-# Drag = loss of speed as particles move through air 
-# Represented here is inverse of drag,
-# Multiply particle's speed per time unit,
-# Thus, smaller value = more speed lost
-drag = 0.999
+mass_air = 0.2
 
 # Elasticity = loss of speed experienced when hitting boundary
 elasticity = 0.75
 
-number_particles = 50
+number_particles = 100
 particles = []
 
 for i in range(number_particles):
-        size = random.randint(15, 25)
+        size = random.randint(1, 25)
+        density = random.randint(1, 20)
+
         x = random.randint(size, width - size) 
         y = random.randint(size, height - size)
 
-        temp = Particle((x, y), size)
+        # Mass = density * (size^2)
+        temp = Particle((x, y), size, (density * size ** 2))
         temp.speed = random.random()
         temp.angle = random.uniform(0, math.pi * 2)
+        # Color particle by varying shades depending on mass
+        temp.color = (200 - density * 10, 200 - density * 10, 255)
 
         particles.append(temp)
 
@@ -195,12 +196,6 @@ while running:
     screen.fill(BLACK)
 
     for i, p in enumerate(particles):
-        '''
-        if p != selected_particle:
-            p.move()
-            p.bounce()
-        p.display()
-        '''
         p.move()
         p.bounce()
         # For each particle ahead of current (p)...
