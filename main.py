@@ -99,6 +99,38 @@ def find_particle(particles, x, y):
             return p
     return None
 
+# collide()
+# Parameters: two particles
+# Measures distance between p1 (x, y) and p2 (x, y) positions
+# Checks if distance is less than combined radius (particle collision)
+def collide(p1, p2):
+    dx = p1.x - p2.x
+    dy = p1.y - p2.y
+
+    distance = math.hypot(dx, dy)
+    if distance < p1.size + p2.size:
+        # Angle of point is tangent of particle at point
+        tangent = math.atan2(dy, dx)
+        angle = 0.5 * math.pi + tangent
+
+        # Subtract current angle from 2 * tangent to reflect particle angle on surface
+        angle1 = 2 * tangent - p1.angle
+        angle2 = 2 * tangent - p2.angle
+
+        # Reduce energy as result of collision
+        speed1 = p2.speed * elasticity
+        speed2 = p1.speed * elasticity
+
+        # Exchange speeds - energy transfer
+        (p1.angle, p1.speed) = (angle1, speed1)
+        (p2.angle, p2.speed) = (angle2, speed2)
+
+        # This avoids particle collision looping internally until speed = 0
+        p1.x += math.sin(angle)
+        p1.y -= math.cos(angle)
+        p2.x -= math.sin(angle)
+        p2.y += math.cos(angle)
+
 pygame.init()
 width = 640
 height = 480
@@ -118,7 +150,7 @@ drag = 0.999
 # Elasticity = loss of speed experienced when hitting boundary
 elasticity = 0.75
 
-number_particles = 4
+number_particles = 50
 particles = []
 
 for i in range(number_particles):
@@ -163,9 +195,17 @@ while running:
     screen.fill(BLACK)
 
     for i, p in enumerate(particles):
+        '''
         if p != selected_particle:
             p.move()
             p.bounce()
+        p.display()
+        '''
+        p.move()
+        p.bounce()
+        # For each particle ahead of current (p)...
+        for p2 in particles[i + 1:]:
+            collide(p, p2)
         p.display()
 
     pygame.display.flip()
