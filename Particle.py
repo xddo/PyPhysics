@@ -16,7 +16,8 @@ class Particle:
     # Subtract from y to account for downward pointing y-axis
     # Drag accounted for each time unit
     # Angles in radians, calculated off Y axis
-    def move(self):
+    def move(self, gravity=(math.pi, 0.002)):
+        (self.angle, self.speed) = add_vectors((self.angle, self.speed), gravity)
         self.x += math.sin(self.angle) * self.speed
         self.y -= math.cos(self.angle) * self.speed
         self.speed *= self.drag
