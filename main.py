@@ -6,14 +6,14 @@ def display(particle):
 
 # Set up pygame
 pygame.init()
-width = 640
-height = 480
+width = 1600
+height = 800
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption('PyPhysics')
 
 # Set up environment class
 env = Particle.Environment(width, height)
-env.add_particles(25)
+env.add_particles(50)
 
 running = True
 clock = pygame.time.Clock()
