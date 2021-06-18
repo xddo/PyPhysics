@@ -40,6 +40,19 @@ class Environment:
         self.elasticity = 0.75
         self.acceleration = None
 
+    def add_particle(self, mouse_pos):
+        size = random.randint(3, 30)
+        mass = random.randint(100, 10000)
+        x, y = mouse_pos
+
+        temp = Particle((x, y), size, mass)
+        temp.speed = (random.random())
+        temp.angle = random.uniform(0, math.pi * 2)
+        temp.color = (0, 255, 0)
+        temp.drag = (temp.mass/(temp.mass + self.mass_air)) ** temp.size
+
+        self.particles.append(temp)
+
     def add_particles(self, n=1):
         for i in range(n):
             size = random.randint(3, 30)

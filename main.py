@@ -18,6 +18,7 @@ env.add_particles(25)
 running = True
 clock = pygame.time.Clock()
 selected_particle = None
+LEFT, RIGHT = 1, 3
 while running: 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -26,8 +27,11 @@ while running:
             if event.key == pygame.K_ESCAPE:
                 running = False
         if event.type == pygame.MOUSEBUTTONDOWN:
-            selected_particle = env.find_particle(pygame.mouse.get_pos())
-        elif event.type == pygame.MOUSEBUTTONUP:
+            if event.button == LEFT:
+                selected_particle = env.find_particle(pygame.mouse.get_pos())
+            if event.button == RIGHT:
+                env.add_particle(pygame.mouse.get_pos())
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == LEFT:
             selected_particle = None
 
     # If clicking on particle,
